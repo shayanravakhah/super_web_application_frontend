@@ -22,7 +22,7 @@ export default function CinemaPage() {
           <BuyButton {...cinema} />
         </div>
         <div className="flex justify-center mt-3 flex-col md:flex-row gap-y-3 gap-x-0 md:gap-y-0  md:gap-x-4">
-          <VoteButton movieInfo={cinema.movies} />
+          <VoteButton {...cinema} />
           <ShowtimeList {...cinema} />
         </div>
       </div>

@@ -1,33 +1,31 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Box from "@mui/material/Box"
-import Button from "@mui/material/Button"
 import Typography from "@mui/material/Typography"
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart"
 import Fade from "@mui/material/Fade"
 import Alert from "@mui/material/Alert"
-import TextField from "@mui/material/TextField"
 import Backdrop from "@mui/material/Backdrop"
 import Modal from "@mui/material/Modal"
 import CircularProgress from "@mui/material/CircularProgress"
 import { Seat } from "./type/cinemaType"
-import { loginUser, reserveSeat } from "./service/cinemaService"
+import { reserveSeat } from "./service/cinemaService"
 
 interface BuyButtonProps {
   seats: Seat[]
   setSeats: React.Dispatch<React.SetStateAction<Seat[]>>
-  selectedSeats: number[]
+  selectedSeat: number
+  setSelectedSeat: React.Dispatch<React.SetStateAction<number>>
   selectedShowtime: number
-  setSelectedSeats: React.Dispatch<React.SetStateAction<number[]>>
+  userID: string
 }
 
 export const BuyButton = ({
-  seats,
-  setSeats,
-  selectedSeats,
+  selectedSeat,
   selectedShowtime,
-  setSelectedSeats,
+  setSelectedSeat,
+  userID
 }: BuyButtonProps) => {
 
   const images = [
@@ -41,81 +39,59 @@ export const BuyButton = ({
 
   const [open, setOpen] = useState(false)
   const [success, setSuccess] = useState(false)
-
-  const [userId, setUserId] = useState<number | null>(null)
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (userId !== null) {
-      handleBuy()
-    }
-  }, [userId])
-
   const handleBuy = async () => {
-    setOpen(true)
-
-    if (!userId || selectedSeats.length === 0) {
+    if (selectedSeat === -1 || selectedShowtime === -1) {
       setSuccess(false)
+      setOpen(true)
       return
     }
-
+    const formData = new FormData()
+    formData.append("user_id", userID)
+    formData.append("showtime_id", selectedShowtime.toString())
+    formData.append("seat_number", selectedSeat.toString())
     try {
-      await Promise.all(
-        selectedSeats.map(seatNumber => {
-          const formData = new FormData()
-          formData.append("user_id", userId.toString())
-          formData.append("showtime_id", selectedShowtime.toString())
-          formData.append("seat_number", seatNumber.toString())
-          formData.append("booking_time", new Date().toISOString())
-          return reserveSeat(formData)
-        })
-      )
-
-      setSeats(prev =>
-        prev.map((seat, i) =>
-          selectedSeats.includes(i + 1)
-            ? { ...seat, isReserved: true, isSelected: false }
-            : seat
-        )
-      )
-
-      setSelectedSeats([])
-      setSuccess(true)
+      setLoading(true)
+      const res = await reserveSeat(formData)
+      if (res.status >= 200 && res.status < 300) {
+        setSuccess(true)
+        setOpen(true)
+        setSelectedSeat(-1)
+        setTimeout(() => {
+          window.location.reload()
+        }, 2500)
+      } else {
+        setSuccess(false)
+      }
     } catch {
       setSuccess(false)
-    }
-  }
-
-  const handleRegister = async () => {
-    if (!username || !password) {
-      alert("Username and password are required")
-      return
-    }
-
-    setLoading(true)
-    try {
-      const res = await loginUser({ name: username, password })
-      setUserId(res.data.id)
-    } catch {
-      alert("The username or password is incorrect.")
     } finally {
       setLoading(false)
     }
   }
 
+
+
+
   return (
     <>
       <Box className="w-full flex justify-center">
-        <Button
-          variant="text"
-          className="flex px-5 gap-2 bg-[#ff9800] text-white hover:bg-[#e68900]"
+        <button
+          disabled={loading}
+          className={`flex items-center justify-center gap-2 px-7 py-2 bg-[#ff9800] text-white hover:bg-[#e68900] ${loading ? "cursor-not-allowed" : ""} rounded-md text-lg`}
           onClick={handleBuy}
         >
-          <Typography>BUY</Typography>
-          <AddShoppingCartIcon />
-        </Button>
+          {
+            loading ?
+              <CircularProgress className="text-white size-7 opacity-100" />
+              :
+              <>
+                <Typography>BUY</Typography>
+                <AddShoppingCartIcon />
+              </>
+          }
+        </button>
       </Box>
 
       <Modal
@@ -126,8 +102,7 @@ export const BuyButton = ({
         slotProps={{ backdrop: { timeout: 500 } }}
       >
         <Fade in={open}>
-          <Box className={`${success ? "bg-green-200" : "bg-red-200"} w-11/12 md:w-3/5 lg:w-1/2 xl:w-1/3 h-2/3 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-14 py-6`}>
-
+          <div className={`${success ? "bg-green-200" : "bg-red-200"} w-11/12 md:w-3/5 lg:w-1/2 xl:w-1/3 h-2/5 lg:h-1/2 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-14 py-6 overflow-y-scroll`}>
             {loading ? (
               <Box className="flex justify-center items-center h-full">
                 <CircularProgress />
@@ -144,38 +119,15 @@ export const BuyButton = ({
                     alt=""
                   />
                 </Box>
-
                 <Alert className="my-2" severity={success ? "success" : "error"}>
                   {success ? "Your ticket purchase was successful!" : "Your purchase failed!"}
                 </Alert>
-
-                {!userId && (
-                  <>
-                    <TextField
-                      label="Username"
-                      value={username}
-                      onChange={e => setUsername(e.target.value)}
-                      fullWidth
-                      className="my-1"
-                    />
-                    <TextField
-                      label="Password"
-                      type="password"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      fullWidth
-                      className="my-1"
-                    />
-                    <Box className="flex justify-center my-2">
-                      <Button onClick={handleRegister} variant="contained" color="error">
-                        Register
-                      </Button>
-                    </Box>
-                  </>
-                )}
+                <Alert className="my-1" color={success ? 'success' : 'error'}>
+                  {success ? "Enjoy your movie!" : "Please select at least a seat or a showtime !"}
+                </Alert>
               </>
             )}
-          </Box>
+          </div>
         </Fade>
       </Modal>
     </>

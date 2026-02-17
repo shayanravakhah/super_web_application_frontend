@@ -12,29 +12,35 @@ export interface Showtime {
   start_time: string
   end_time: string
   available_seats: number
-  price: number
-}
-
-export interface Movie {
-  id: number
+  price: string
+  created_at: string
   title: string
   description: string
   genre: string
-  releaseYear: number
-  rating: number
-  ratingCount: number
-  imageUrl: string
+  release_year: number
+  rating: string
+  rating_count: number
+  image_url: string
 }
 
+
 export interface Reservation {
+  date: string
+  start_time: string
+  end_time: string
+  price: string
+  title: string
+  description: string
+  genre: string
+  release_year: number
+  rating: string
+  rating_count: number
+  image_url: string
   id: number
   user_id: number
   showtime_id: number
   seat_number: number
   booking_time: string
-  showtime: Showtime
+  rate: string
 }
 
-export interface VotePayload {
-  vote: number
-}

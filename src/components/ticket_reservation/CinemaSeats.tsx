@@ -6,8 +6,8 @@ import { Seat } from "./type/cinemaType"
 interface CinemaSeatsProps {
   seats: Seat[]
   setSeats: React.Dispatch<React.SetStateAction<Seat[]>>
-  selectedSeats: number[]
-  setSelectedSeats: React.Dispatch<React.SetStateAction<number[]>>
+  selectedSeat: number
+  setSelectedSeat: React.Dispatch<React.SetStateAction<number>>
   selectedShowtime: number
   COLS: number
 }
@@ -15,10 +15,8 @@ interface CinemaSeatsProps {
 export const CinemaSeats = ({
   seats,
   setSeats,
-  selectedSeats,
-  setSelectedSeats,
+  setSelectedSeat,
   selectedShowtime,
-  COLS,
 }: CinemaSeatsProps) => {
 
   const handleSeatClick = (index: number): void => {
@@ -26,20 +24,14 @@ export const CinemaSeats = ({
       alert("please select a showtime")
       return
     }
-
     setSeats(prev =>
       prev.map((seat, i) =>
         i === index
           ? { ...seat, isSelected: !seat.isSelected }
-          : seat
+          : { ...seat, isSelected: false }
       )
     )
-
-    setSelectedSeats(prev =>
-      prev.includes(index + 1)
-        ? prev.filter(v => v !== index + 1)
-        : [...prev, index + 1]
-    )
+    setSelectedSeat(index + 1)
   }
 
   return (
@@ -49,11 +41,13 @@ export const CinemaSeats = ({
         const isDisabled = seat.isReserved
 
         const baseClass =
-          seat.isSelected
-            ? "bg-red-400 hover:bg-red-500"
-            : seat.isReserved
-              ? "bg-gray-500"
-              : "bg-fuchsia-700 hover:bg-fuchsia-800"
+          seat.isSelected ?
+            "bg-red-400 hover:bg-red-500"
+            :
+            seat.isReserved ?
+              "bg-gray-500"
+              :
+              "bg-fuchsia-700 hover:bg-fuchsia-800"
 
         return (
           <div key={seatNumber}>
@@ -65,7 +59,6 @@ export const CinemaSeats = ({
             >
               {seatNumber}
             </Button>
-
             <button
               disabled={isDisabled}
               onClick={() => handleSeatClick(index)}

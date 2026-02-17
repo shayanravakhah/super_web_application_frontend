@@ -1,19 +1,22 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Seat, Movie, Showtime } from "../type/cinemaType"
-import { fetchMovies, fetchShowtimes } from "../service/cinemaService"
-import {  VotePayload } from "../type/cinemaType"
+import { Seat, Showtime } from "../type/cinemaType"
+import {  fetchShowtimes } from "../service/cinemaService"
+import { useRouter } from "next/navigation"
+
 
 const ROWS = 5;
 const COLS = 8;
 
 export const useCinema = () => {
   const [seats, setSeats] = useState<Seat[]>([])
-  const [selectedSeats, setSelectedSeats] = useState<number[]>([])
+  const [selectedSeat, setSelectedSeat] = useState<number>(-1)
   const [selectedShowtime, setSelectedShowtime] = useState<number>(-1)
-  const [movies, setMovies] = useState<Movie[]>([])
   const [showtimes, setShowtimes] = useState<Showtime[]>([])
+  const [userID, setUserID] = useState<string>("-1")
+  const router = useRouter()
+
 
   useEffect(() => {
     const initialSeats: Seat[] = []
@@ -23,21 +26,25 @@ export const useCinema = () => {
       }
     }
     setSeats(initialSeats)
-
-    fetchMovies().then(r => setMovies(r.data))
+    const user_id = localStorage.getItem("user_id");
+    if (!user_id) {
+      router.push("/login")
+      return
+    }
+    setUserID(user_id);
     fetchShowtimes().then(r => setShowtimes(r.data))
   }, [])
 
   return {
     seats,
     setSeats,
-    selectedSeats,
-    setSelectedSeats,
+    selectedSeat,
+    setSelectedSeat,
     selectedShowtime,
     setSelectedShowtime,
-    movies,
     showtimes,
-    COLS
+    COLS,
+    userID
   }
 }
 
@@ -45,12 +52,4 @@ export const useCinema = () => {
 
 // default values
 export const initialVoteValue = 3
-export const initialErrors: [boolean, boolean] = [false, false]
-
-// helpers
-export const getMovieById = (movies: Movie[], id: number): Movie | undefined =>
-  movies.find(m => m.id === id)
-
-// payload creators
-export const createVotePayload = (vote: number): VotePayload => ({ vote })
 

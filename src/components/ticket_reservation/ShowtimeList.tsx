@@ -1,8 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import Box from "@mui/material/Box"
-import Button from "@mui/material/Button"
 import Typography from "@mui/material/Typography"
 import Modal from "@mui/material/Modal"
 import Fade from "@mui/material/Fade"
@@ -11,13 +10,11 @@ import CircularProgress from "@mui/material/CircularProgress"
 import LocalActivityIcon from "@mui/icons-material/LocalActivity"
 import FavoriteIcon from "@mui/icons-material/Favorite"
 import Backdrop from "@mui/material/Backdrop"
-
-import { Seat, Movie, Showtime } from "./type/cinemaType"
-import axios from "axios"
+import { Seat, Showtime } from "./type/cinemaType"
+import { getSeatReservation } from "./service/cinemaService"
 
 interface ShowtimeListProps {
   showtimes: Showtime[]
-  movies: Movie[]
   seats: Seat[]
   setSeats: React.Dispatch<React.SetStateAction<Seat[]>>
   setSelectedShowtime: React.Dispatch<React.SetStateAction<number>>
@@ -25,24 +22,15 @@ interface ShowtimeListProps {
 
 export const ShowtimeList = ({
   showtimes,
-  movies,
-  seats,
   setSeats,
   setSelectedShowtime,
 }: ShowtimeListProps) => {
-
   const [open, setOpen] = useState(false)
-
-  const movieMap = useMemo(() => {
-    const map = new Map<number, Movie>()
-    movies.forEach(m => map.set(m.id, m))
-    return map
-  }, [movies])
+  const [loading, setLoading] = useState(false)
 
   const selectShowtime = async (showtimeId: number) => {
     setOpen(false)
     setSelectedShowtime(showtimeId)
-
     setSeats(prev =>
       prev.map(seat => ({
         ...seat,
@@ -50,15 +38,11 @@ export const ShowtimeList = ({
         isSelected: false,
       }))
     )
-
-    const res = await axios.get(
-      `https://superwebapplicationbackendshrava-production.up.railway.app/reservation/${showtimeId}`
-    )
-
+    setLoading(true)
+    const res = await getSeatReservation(showtimeId)
     const reservedSeats: number[] = res.data.map(
       (r: { seat_number: number }) => r.seat_number
     )
-
     setSeats(prev =>
       prev.map((seat, i) =>
         reservedSeats.includes(i + 1)
@@ -66,19 +50,27 @@ export const ShowtimeList = ({
           : seat
       )
     )
+    setLoading(false)
   }
 
   return (
     <>
-      <Box className="flex justify-center">
-        <Button
+      <div className="flex justify-center">
+        <button
           onClick={() => setOpen(true)}
-          className="flex gap-2 bg-[#607d8b] text-white hover:bg-[#455a64]"
+          className={`flex items-center justify-center gap-2 px-3 py-2  bg-[#607d8b] text-white hover:bg-[#455a64] ${loading ? "cursor-not-allowed" : ""} rounded-md text-lg`}
         >
-          <Typography>List of showtimes</Typography>
-          <LocalActivityIcon />
-        </Button>
-      </Box>
+          {
+            loading ?
+              <CircularProgress className="text-white size-7 opacity-100" />
+              :
+              <>
+                <p>LIST OF SHOWTIMES</p>
+                <LocalActivityIcon />
+              </>
+          }
+        </button>
+      </div>
 
       <Modal
         open={open}
@@ -96,45 +88,45 @@ export const ShowtimeList = ({
               </Box>
             ) : (
               showtimes.map(showtime => {
-                const movie = movieMap.get(showtime.movie_id)
-                if (!movie) return null
-
                 return (
                   <Box
                     key={showtime.id}
                     onClick={() => selectShowtime(showtime.id)}
                     className="flex w-full my-2 px-2 py-3 border border-black rounded-md gap-3 cursor-pointer hover:bg-red-300"
                   >
-                    <Box className="w-1/3">
+                    <Box className="w-1/2 lg:w-1/3">
                       <img
-                        src={movie.imageUrl}
+                        src={showtime.image_url}
                         className="w-full h-full object-cover rounded-md"
                       />
                     </Box>
 
-                    <Box className="flex flex-col w-2/3">
+                    <Box className="flex flex-col w-1/2 lg:w-2/3">
                       <Typography className="font-bold text-center">
-                        {movie.title}
+                        {showtime.title} ({showtime.release_year})
                       </Typography>
 
                       <Typography className="text-sm my-1">
-                        {movie.description}
+                        {showtime.description}
+                      </Typography>
+
+                      <Typography className="text-sm my-5 text-center">
+                        Genre : {showtime.genre}
                       </Typography>
 
                       <Box className="flex justify-center my-1">
-                        <Rating value={movie.rating} precision={0.1} readOnly />
+                        <Rating value={Number(showtime.rating)} precision={0.1} readOnly />
                       </Box>
 
                       <Typography className="text-xs text-center text-gray-600">
-                        {movie.ratingCount} votes · {movie.rating}
+                        {showtime.rating_count} votes · {showtime.rating}
                         <FavoriteIcon className="text-red-500 ml-1" />
                       </Typography>
 
-                      <Box className="text-sm text-center mt-2">
-                        Date: {showtime.date} | {showtime.start_time} - {showtime.end_time}
+                      <Box className="text-sm text-center mt-2 text-gray-400">
+                        Date: {showtime.date.split("T")[0]} | {showtime.start_time} - {showtime.end_time}
                       </Box>
-
-                      <Box className="text-sm text-center">
+                      <Box className="text-sm text-center text-gray-400">
                         Seats: {showtime.available_seats} | Price: {showtime.price}$
                       </Box>
                     </Box>

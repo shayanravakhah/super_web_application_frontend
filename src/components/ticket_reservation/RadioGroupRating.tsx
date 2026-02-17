@@ -58,7 +58,7 @@ export default function RadioGroupRating({ value, setValue }: ratingProp) {
   return (
     <StyledRating
       name="highlight-selected-only"
-      defaultValue={3}
+      defaultValue={value}
       IconContainerComponent={IconContainer}
       getLabelText={(value: number) => customIcons[value].label}
       highlightSelectedOnly
