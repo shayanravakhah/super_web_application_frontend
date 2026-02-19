@@ -191,7 +191,6 @@ export default function ExchangeRates() {
                   <>
                     <Box className="text-xl text-[rgb(92,102,123)]">{amount.toFixed(2)} {keyFrom} =</Box>
                     <Box className="text-[rgb(46, 60, 87)] text-3xl my-2">{(Number(amount.toFixed(2)) * valueTo / valueFrom).toFixed(6)} {keyTo}</Box>
-                    <Box>{valueFrom}    {valueTo}</Box>
                   </>
                 }
               </Box>
